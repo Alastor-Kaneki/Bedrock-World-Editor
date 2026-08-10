@@ -1,0 +1,21 @@
+const base = new URL('.', import.meta.url);
+const res = await fetch(new URL('./item-data.payload.gz', base), {cache:'force-cache'});
+if (!res.ok) throw new Error(`Could not load item data payload: HTTP ${res.status}`);
+let source = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).text();
+source = source.replaceAll('__BASE__', base.href);
+const bytes = new TextEncoder().encode(source);
+let binary = '';
+for (let i=0;i<bytes.length;i+=0x8000) binary += String.fromCharCode(...bytes.subarray(i,i+0x8000));
+const mod = await import(`data:text/javascript;base64,${btoa(binary)}`);
+
+export const OFFICIAL_SOURCES = mod.OFFICIAL_SOURCES;
+export const ENCHANTMENTS = mod.ENCHANTMENTS;
+export const FALLBACK_CATALOG = mod.FALLBACK_CATALOG;
+export const enchantmentById = mod.enchantmentById;
+export const enchantmentByKey = mod.enchantmentByKey;
+export const getItemEnchantments = mod.getItemEnchantments;
+export const setItemEnchantments = mod.setItemEnchantments;
+export const classifyCatalogItem = mod.classifyCatalogItem;
+export const parseItemsMarkdown = mod.parseItemsMarkdown;
+export const loadOfficialCatalog = mod.loadOfficialCatalog;
+export const resetCatalogCache = mod.resetCatalogCache;
