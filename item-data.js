@@ -1,12 +1,19 @@
 const base = new URL('.', import.meta.url);
-const res = await fetch(new URL('./item-data.payload.gz', base), {cache:'force-cache'});
+const res = await fetch(new URL('./item-data.payload.gz?v=0.3.3-firefox', base), {cache:'no-store'});
 if (!res.ok) throw new Error(`Could not load item data payload: HTTP ${res.status}`);
+if (typeof DecompressionStream === 'undefined') throw new Error('This browser does not support DecompressionStream.');
 let source = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).text();
 source = source.replaceAll('__BASE__', base.href);
-const bytes = new TextEncoder().encode(source);
-let binary = '';
-for (let i=0;i<bytes.length;i+=0x8000) binary += String.fromCharCode(...bytes.subarray(i,i+0x8000));
-const mod = await import(`data:text/javascript;base64,${btoa(binary)}`);
+
+// Use a same-origin blob: module rather than a data: module. Firefox treats
+// data: modules as opaque-origin and can reject their imports of nbt.js.
+const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
+let mod;
+try {
+  mod = await import(blobUrl);
+} finally {
+  URL.revokeObjectURL(blobUrl);
+}
 
 export const OFFICIAL_SOURCES = mod.OFFICIAL_SOURCES;
 export const ENCHANTMENTS = mod.ENCHANTMENTS;
