@@ -1,57 +1,41 @@
-# Bedrock Web Editor v0.3.2-alpha
+# Bedrock Web Editor v0.4.0-alpha
 
-A zero-build, client-side Minecraft Bedrock world/inventory editor designed for GitHub Pages.
+A zero-build, client-side Minecraft Bedrock world/inventory editor for GitHub Pages.
 
 **Live site:** https://alastor-kaneki.github.io/Bedrock-World-Editor/
 
-## v0.3.2 Firefox/cache recovery
+## v0.4.0 — Save All + verified export
 
-v0.3.2 fixes the startup failure shown in Firefox where an older cached v0.3 bootstrap could be mixed with the newer HTML shell and crash on a missing `.onchange` target.
+This release fixes a major workflow bug where controls could contain edited values that had not yet been committed into the in-memory `level.dat` / player NBT when `.mcworld` export started.
 
-The recovery release now:
-
-- uses a release-specific bootstrap file (`boot-0.3.2.js`);
-- deletes old `bedrock-web-editor-*` Cache Storage entries before loading the controller;
-- unregisters stale service workers for the site scope;
-- imports the current controller with a unique cache-busting URL;
-- installs a new network-first `service-worker-0.3.2.js`;
-- keeps the full v0.3 item/enchantment UI directly in `index.html`;
-- keeps the live-site link in the website's About tab.
+- New **Save All** button in the top bar.
+- Save All commits world settings, gamerules, player stats, and the currently-open item/enchantment editor in one action.
+- **Export level.dat** and **Export .mcworld** automatically run Save All first.
+- `.mcworld` export now reopens the generated archive before downloading it and checks that the rebuilt `level.dat` is byte-for-byte the edited one.
+- If a `~local_player` LevelDB overlay is being exported, the editor checks that the player record round-trips through the generated world database.
+- Export aborts with an error instead of downloading a world that fails those checks.
+- v0.4.0 uses a new versioned loader/assets to avoid old PWA/service-worker files being mixed with the new editor.
 
 ## Current features
 
 - Open complete `.mcworld` / ZIP world archives and Bedrock world folders.
-- Treat `level.dat` as the primary world file and preserve the rest of the world during export.
-- Parse and write Bedrock's 8-byte `level.dat` header and little-endian NBT.
+- Treat `level.dat` as the primary world file.
 - Edit world name, seed, game mode, difficulty, spawn, time, commands, Creative-loaded state, and detected gamerules.
-- Browse and edit the full `level.dat` NBT tree.
-- Detect embedded player data and recover supported `~local_player` LevelDB records.
-- Edit main inventory, armor, offhand, XP level, and health.
-- Browse Microsoft's current Bedrock item listing, including technical, hidden/normally-unobtainable, Education/chemistry, deprecated, and placeholder IDs.
-- Resolve matching item/block sprites from Mojang's official `bedrock-samples` resource-pack metadata and raw assets.
-- Fall back to a built-in catalog/glyph when a remote source or sprite is unavailable.
-- Add, remove, and update enchantments in item NBT.
-- Show normal enchantment maximums as hints while allowing signed `TAG_Short` levels from `-32768` through `32767` and custom numeric enchantment IDs.
+- Browse/edit the full little-endian NBT tree.
+- Edit local-player inventory, armor, offhand, XP level, and health when the player record is available.
+- Browse Microsoft’s Bedrock item listing, including technical, hidden/normally-unobtainable, Education/chemistry, deprecated, and placeholder IDs.
+- Resolve matching vanilla item/block sprites from Mojang’s official `bedrock-samples` assets.
+- Add/remove enchantments, including custom numeric IDs and signed-short levels up to 32767.
+- Experimental browser-side LevelDB reader plus local-player recovery-log export.
 - Undo/redo.
-- Export modified `level.dat` or a rebuilt `.mcworld`.
-- PWA/GitHub Pages support.
+- PWA/offline support.
 
-## LevelDB coverage
+## Important LevelDB note
 
-The experimental browser-side LevelDB bridge supports WAL recovery, WriteBatch parsing/writing, CRC32C, exact-key lookup in supported table blocks, raw Snappy decompression, and safe recovery-log overlays for edited `~local_player` data.
-
-It intentionally does **not** yet provide a complete chunk/block/entity editor. Planned areas include remote `player_*` selection, arbitrary key browsing, chunk/subchunk decoding, block entities/containers, actors/entities, maps/structures/POI, and broader Bedrock compression support.
+`level.dat` is always written directly into the exported world. Modern player inventory can live in `db/`, so player changes use the experimental LevelDB path and receive an additional export-time round-trip check. Keep the original world until the edited copy has been tested in Minecraft.
 
 ## GitHub Pages
 
-This repository is deployed from `main` at `/` with no build step.
-
-Live URL:
-
-`https://alastor-kaneki.github.io/Bedrock-World-Editor/`
-
-## Safety
-
-Keep the original world until an edited copy has loaded successfully in Minecraft. LevelDB editing remains experimental.
+Publish `main` from `/ (root)` under **Settings → Pages**. No build step is required.
 
 This is an unofficial Minecraft tool and is not affiliated with Mojang or Microsoft.
