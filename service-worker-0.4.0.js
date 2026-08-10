@@ -1,0 +1,5 @@
+const CACHE='bedrock-web-editor-v0.4.0';
+const CORE=['./','./index.html','./styles.css?v=0.4.0','./v3.css?v=0.4.0','./app-v0.4.0.js','./app-v0.4.0.payload.gz?build=0.4.0-r1','./item-data.js?v=0.4.0','./nbt.js?v=0.4.0','./zip.js?v=0.4.0','./leveldb-adapter.js?v=0.4.0','./manifest.webmanifest','./icon.svg'];
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);for(const u of CORE){try{const r=await fetch(u,{cache:'reload'});if(r.ok)await c.put(u,r.clone())}catch(_){}}await self.skipWaiting()})()));
+self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('bedrock-web-editor-')&&k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);if(u.origin===self.location.origin){e.respondWith((async()=>{const c=await caches.open(CACHE);try{const r=await fetch(e.request,{cache:'no-store'});if(r.ok)c.put(e.request,r.clone()).catch(()=>{});return r}catch(_){return(await c.match(e.request))||(e.request.mode==='navigate'?c.match('./index.html'):Response.error())}})())}});
