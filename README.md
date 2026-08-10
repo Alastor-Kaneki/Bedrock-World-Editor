@@ -1,83 +1,57 @@
-# Bedrock Web Editor v0.3.1-alpha
+# Bedrock Web Editor v0.3.2-alpha
 
 A zero-build, client-side Minecraft Bedrock world/inventory editor designed for GitHub Pages.
 
 **Live site:** https://alastor-kaneki.github.io/Bedrock-World-Editor/
 
-v0.3.1 fixes stale GitHub Pages/PWA caching and makes the v0.3 item/enchantment UI part of the normal page shell, while keeping compatibility with users who still have the older shell cached.
+## v0.3.2 Firefox/cache recovery
 
-## What it does
+v0.3.2 fixes the startup failure shown in Firefox where an older cached v0.3 bootstrap could be mixed with the newer HTML shell and crash on a missing `.onchange` target.
 
-- Opens complete `.mcworld` / ZIP world archives and Bedrock world folders.
-- Treats `level.dat` as the primary world file and preserves the rest of the world during export.
-- Parses and writes Bedrock's 8-byte `level.dat` header and little-endian NBT.
-- Edits world name, seed, game mode, difficulty, spawn, time, commands, Creative-loaded state, and detected gamerules.
-- Browses and edits the full `level.dat` NBT tree.
-- Detects embedded player records and can recover `~local_player` from supported LevelDB data.
-- Edits main inventory, armor, offhand, XP level, and health.
-- Browses the current Bedrock item listing from Microsoft's official Minecraft Creator reference.
-- Includes technical, hidden/normally-unobtainable, Education/chemistry, deprecated, and placeholder IDs exposed by the reference.
-- Resolves matching item/block sprites from Mojang's official `bedrock-samples` resource-pack metadata and raw assets.
-- Falls back to a built-in catalog and glyph preview when an official source/texture cannot be reached.
-- Adds/removes/updates item enchantments through Bedrock item NBT.
-- Shows normal enchantment maximums as hints while allowing signed `TAG_Short` levels from `-32768` through `32767` and custom numeric enchantment IDs.
-- Supports undo/redo.
-- Exports edited `level.dat` or a rebuilt `.mcworld`.
-- Works as a PWA on GitHub Pages.
+The recovery release now:
 
-## v0.3.1 cache/update fix
+- uses a release-specific bootstrap file (`boot-0.3.2.js`);
+- deletes old `bedrock-web-editor-*` Cache Storage entries before loading the controller;
+- unregisters stale service workers for the site scope;
+- imports the current controller with a unique cache-busting URL;
+- installs a new network-first `service-worker-0.3.2.js`;
+- keeps the full v0.3 item/enchantment UI directly in `index.html`;
+- keeps the live-site link in the website's About tab.
 
-The previous service worker used a cache-first strategy for the entire app shell, which could make an already-opened or installed copy appear stuck on an older release. v0.3.1:
+## Current features
 
-- bumps the cache namespace;
-- uses versioned `app.js` / CSS URLs;
-- forces service-worker update checks with `updateViaCache: "none"`;
-- uses network-first loading for HTML, JavaScript, CSS, and the manifest;
-- deletes previous Bedrock Web Editor caches on activation;
-- refreshes controlled windows after the new worker activates.
+- Open complete `.mcworld` / ZIP world archives and Bedrock world folders.
+- Treat `level.dat` as the primary world file and preserve the rest of the world during export.
+- Parse and write Bedrock's 8-byte `level.dat` header and little-endian NBT.
+- Edit world name, seed, game mode, difficulty, spawn, time, commands, Creative-loaded state, and detected gamerules.
+- Browse and edit the full `level.dat` NBT tree.
+- Detect embedded player data and recover supported `~local_player` LevelDB records.
+- Edit main inventory, armor, offhand, XP level, and health.
+- Browse Microsoft's current Bedrock item listing, including technical, hidden/normally-unobtainable, Education/chemistry, deprecated, and placeholder IDs.
+- Resolve matching item/block sprites from Mojang's official `bedrock-samples` resource-pack metadata and raw assets.
+- Fall back to a built-in catalog/glyph when a remote source or sprite is unavailable.
+- Add, remove, and update enchantments in item NBT.
+- Show normal enchantment maximums as hints while allowing signed `TAG_Short` levels from `-32768` through `32767` and custom numeric enchantment IDs.
+- Undo/redo.
+- Export modified `level.dat` or a rebuilt `.mcworld`.
+- PWA/GitHub Pages support.
 
-## LevelDB support
+## LevelDB coverage
 
-`leveldb-adapter.js` currently implements:
+The experimental browser-side LevelDB bridge supports WAL recovery, WriteBatch parsing/writing, CRC32C, exact-key lookup in supported table blocks, raw Snappy decompression, and safe recovery-log overlays for edited `~local_player` data.
 
-- LevelDB physical WAL records (`FULL`, `FIRST`, `MIDDLE`, `LAST`)
-- 32 KiB WAL block fragmentation
-- CRC32C + LevelDB checksum masking
-- WriteBatch parsing/writing with 64-bit sequence numbers
-- `CURRENT` / `MANIFEST` parsing needed for live-file discovery
-- exact user-key lookup in supported table blocks
-- uncompressed blocks and raw Snappy decompression
-- best-effort compression-type-2 handling through browser decompression APIs
-- safe new-log overlay export for edited local-player data
-
-The DB layer is secondary to `level.dat`; original SST tables are left untouched by the experimental player overlay writer.
-
-## Still experimental / incomplete
-
-- remote `player_*` selection
-- arbitrary LevelDB key browsing
-- chunk/subchunk block editing
-- block entities and chest/container inventories
-- actors/entities
-- maps/structures/POI editing
-- full SST creation/compaction
-- broader historical Bedrock compression variants
-
-Unsupported table compression is skipped with diagnostics rather than overwritten.
+It intentionally does **not** yet provide a complete chunk/block/entity editor. Planned areas include remote `player_*` selection, arbitrary key browsing, chunk/subchunk decoding, block entities/containers, actors/entities, maps/structures/POI, and broader Bedrock compression support.
 
 ## GitHub Pages
 
-This repository is intended to deploy directly from `main` at `/ (root)` with no build step.
+This repository is deployed from `main` at `/` with no build step.
 
-## Local testing
+Live URL:
 
-```bash
-python -m http.server 8080
-node tests/selftest.mjs
-```
+`https://alastor-kaneki.github.io/Bedrock-World-Editor/`
 
 ## Safety
 
-Keep an original copy of important worlds and test edited exports before replacing the original save.
+Keep the original world until an edited copy has loaded successfully in Minecraft. LevelDB editing remains experimental.
 
 This is an unofficial Minecraft tool and is not affiliated with Mojang or Microsoft.
