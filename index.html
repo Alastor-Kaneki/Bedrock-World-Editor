@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Client-side Minecraft Bedrock world and inventory editor for GitHub Pages.">
+  <title>Bedrock Web Editor</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">B</div><div><strong>Bedrock Web Editor</strong><small>client-side world tools</small></div></div>
+    <div class="top-actions">
+      <span id="dirtyBadge" class="dirty" hidden>UNSAVED</span>
+      <button id="undoBtn" class="ghost" disabled>Undo</button>
+      <button id="redoBtn" class="ghost" disabled>Redo</button>
+      <button id="exportLevel" class="ghost" disabled>Export level.dat</button>
+      <button id="exportWorld" class="primary" disabled>Export .mcworld</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="emptyState" class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">v0.2.1 ALPHA • STATIC • GITHUB PAGES READY</span>
+        <h1>Edit Bedrock worlds <span>in your browser.</span></h1>
+        <p>Open a whole <code>.mcworld</code>, ZIP, or Bedrock world folder. <code>level.dat</code> is loaded first and treated as the primary world file; <code>db/</code> is used only for data that lives outside it. Files stay on your device.</p>
+      </div>
+      <div id="dropzone" class="dropzone">
+        <div class="drop-icon">⬢</div>
+        <h2>Drop a whole Bedrock world here</h2>
+        <p>.mcworld / .zip / world folder</p>
+        <div class="drop-buttons">
+          <label class="primary file-label">Choose world<input id="fileInput" type="file" accept=".mcworld,.zip,.dat,application/zip" hidden></label>
+          <label class="ghost file-label">Choose folder<input id="folderInput" type="file" webkitdirectory multiple hidden></label>
+        </div>
+        <small>World archives are decoded locally with built-in browser compression APIs. No server upload is used.</small>
+      </div>
+      <div class="feature-row">
+        <div><b>level.dat first</b><span>Primary source for world settings and NBT</span></div>
+        <div><b>Whole-world export</b><span>Preserves the rest of the world archive/folder</span></div>
+        <div><b>Secondary DB layer</b><span>Used only for player/chunk data outside level.dat</span></div>
+      </div>
+    </section>
+
+    <section id="editor" hidden>
+      <div class="worldbar">
+        <div><span class="eyebrow">OPEN WORLD</span><h1 id="worldTitle">World</h1><p><span id="sourceName"></span> • <span id="sourceType"></span></p></div>
+        <div class="worldmeta"><span><b id="headerVersion">—</b> header</span><span><b id="payloadSize">—</b> payload</span><span><b id="levelHeaderInfo">—</b></span></div>
+      </div>
+
+      <nav class="tabs" aria-label="Editor sections">
+        <button class="tab active" data-tab="world">level.dat</button>
+        <button class="tab" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="inventory">Inventory</button>
+        <button class="tab" data-tab="nbt">NBT</button>
+        <button class="tab" data-tab="database">Database</button>
+        <button class="tab" data-tab="about">About</button>
+      </nav>
+
+      <section id="panel-overview" class="panel">
+        <div class="statgrid">
+          <article><span>WORLD NAME</span><strong id="ovName">—</strong></article>
+          <article><span>GAME MODE</span><strong id="ovMode">—</strong></article>
+          <article><span>SEED</span><strong id="ovSeed">—</strong></article>
+          <article><span>SPAWN</span><strong id="ovSpawn">—</strong></article>
+          <article><span>FILES</span><strong id="ovFiles">—</strong></article>
+          <article><span>PLAYER DATA</span><strong id="ovPlayers">—</strong></article>
+        </div>
+        <article class="card notice">
+          <div class="notice-icon">!</div><div><h3>Make a backup before importing the edited world</h3><p>This editor preserves unknown NBT tags, but Bedrock changes its save format over time. Keep the original world until the edited copy has loaded correctly in-game.</p></div>
+        </article>
+      </section>
+
+      <section id="panel-world" class="panel active">
+        <div class="section-title"><div><span class="eyebrow">PRIMARY WORLD FILE • LEVEL.DAT</span><h2>World settings</h2><p>This is the first file loaded from every whole world and the primary source for world metadata.</p></div><button id="applyWorld" class="primary">Apply to level.dat</button></div>
+        <div class="formgrid">
+          <label><span>World name</span><input id="worldName" type="text"></label>
+          <label><span>Seed</span><input id="seed" type="text" inputmode="numeric"></label>
+          <label><span>Game mode</span><select id="gameMode"><option value="0">Survival</option><option value="1">Creative</option><option value="2">Adventure</option><option value="3">Spectator</option></select></label>
+          <label><span>Difficulty</span><select id="difficulty"><option value="0">Peaceful</option><option value="1">Easy</option><option value="2">Normal</option><option value="3">Hard</option></select></label>
+          <label><span>Spawn X</span><input id="spawnX" type="number"></label>
+          <label><span>Spawn Y</span><input id="spawnY" type="number"></label>
+          <label><span>Spawn Z</span><input id="spawnZ" type="number"></label>
+          <label><span>World time</span><input id="worldTime" type="text" inputmode="numeric"></label>
+        </div>
+        <div class="togglegrid">
+          <label class="switchrow"><span>Commands enabled</span><input id="commandsEnabled" type="checkbox"><i></i></label>
+          <label class="switchrow"><span>Loaded in Creative</span><input id="creativeLoaded" type="checkbox"><i></i></label>
+        </div>
+        <div class="card"><h3>Detected gamerules</h3><div id="gamerules" class="togglegrid"></div></div>
+      </section>
+
+      <section id="panel-inventory" class="panel">
+        <div class="section-title"><div><span class="eyebrow">PLAYER DATA</span><h2>Inventory editor</h2></div><label class="inline-select">Player record<select id="playerPicker"></select></label></div>
+        <article id="playerNoData" class="card warning" hidden>
+          <h3>No editable player inventory found yet</h3>
+          <p id="playerNoDataText">The editor will automatically check LevelDB for <code>~local_player</code>. You can also load an extracted raw player NBT record below.</p>
+        </article>
+        <div id="inventoryContent">
+          <div class="playerstats"><span>Level <b id="playerLevel">—</b></span><span>Health <b id="playerHealth">—</b></span><span>Source <b id="playerSource">—</b></span><small>Tap a slot to edit it</small></div>
+          <div class="player-tools card slim-card">
+            <label><span>XP level</span><input id="editPlayerLevel" type="number"></label>
+            <label><span>Health</span><input id="editPlayerHealth" type="number" step="0.5"></label>
+            <button id="applyPlayerStats" class="ghost">Apply stats</button>
+            <button id="exportSelectedPlayer" class="ghost">Export player NBT</button>
+            <button id="clearInventory" class="danger">Clear main inventory</button>
+          </div>
+          <div class="inventory-layout">
+            <div><h3>Main inventory</h3><div id="inventoryGrid" class="invgrid"></div></div>
+            <aside><h3>Armor</h3><div id="armorGrid" class="specialgrid"></div><h3>Offhand</h3><div id="offhandGrid" class="specialgrid"></div></aside>
+          </div>
+        </div>
+        <article class="card raw-card">
+          <div><h3>Raw player NBT</h3><p>For testing LevelDB player values separately, load a raw little-endian NBT record.</p></div>
+          <label class="ghost file-label">Load raw NBT<input id="rawPlayerInput" type="file" hidden></label>
+        </article>
+        <div id="rawPlayerPanel" class="card" hidden>
+          <div class="section-title compact"><div><h3 id="rawPlayerName"></h3></div><div class="inline-actions"><button id="bindRawPlayer" class="primary">Use as ~local_player</button><button id="exportRawPlayer" class="ghost">Export raw NBT</button></div></div>
+          <pre id="rawPlayerJson" class="codebox"></pre>
+        </div>
+      </section>
+
+      <section id="panel-nbt" class="panel">
+        <div class="section-title"><div><span class="eyebrow">ADVANCED</span><h2>NBT tree</h2><p>Click a scalar value to edit it.</p></div><input id="nbtSearch" class="search" placeholder="Search tags or values…"></div>
+        <div id="nbtTree" class="nbt-tree"></div>
+      </section>
+
+      <section id="panel-database" class="panel">
+        <div class="section-title"><div><span class="eyebrow">SECONDARY WORLD DATA • LEVELDB • EXPERIMENTAL</span><h2>Database bridge</h2></div><div class="inline-actions"><button id="retryDb" class="ghost">Retry scan</button><span class="pill"><b id="dbCount">0</b> DB files</span></div></div>
+        <article class="card warning"><h3>Secondary to level.dat</h3><p>The world opens and edits <code>level.dat</code> first. This database layer is only consulted for records that are not actually stored in <code>level.dat</code>, such as a modern <code>~local_player</code>. Edited database records are written without replacing the primary <code>level.dat</code> workflow.</p></article>
+        <div class="statgrid db-stats">
+          <article><span>DB STATUS</span><strong id="dbStatus">—</strong></article>
+          <article><span>LOCAL PLAYER</span><strong id="dbLocalStatus">—</strong></article>
+          <article><span>MANIFEST</span><strong id="dbManifest">—</strong></article>
+          <article><span>PENDING DB EDITS</span><strong id="dbPending">0</strong></article>
+        </div>
+        <p id="dbHints" class="muted"></p>
+        <div id="dbFiles" class="dbfiles"></div>
+      </section>
+
+      <section id="panel-about" class="panel">
+        <div class="card prose">
+          <span class="eyebrow">BEDROCK WEB EDITOR • v0.2.1 ALPHA</span>
+          <h2>What this build actually supports</h2>
+          <p>This is a static application: HTML, CSS and JavaScript only. It can be hosted from a normal GitHub Pages repository with no server, database, account system, or build step.</p>
+          <ul>
+            <li>Open and re-export complete <code>.mcworld</code> / ZIP archives and Bedrock world folders.</li>
+            <li>Treat <code>level.dat</code> as the primary file: load it first, edit it directly, preserve unknown tags, and write it back into the whole-world export.</li>
+            <li>Parse and write Bedrock's 8-byte <code>level.dat</code> header and little-endian NBT.</li>
+            <li>Edit common world settings while preserving unrecognized NBT tags.</li>
+            <li>Edit inventory/armor/offhand from embedded NBT, raw NBT, or a recoverable LevelDB <code>~local_player</code> record.</li>
+            <li>Read standard LevelDB WAL records and exact keys from supported SST blocks.</li>
+            <li>Export local-player edits as a new LevelDB recovery WAL overlay without rewriting existing SST tables.</li>
+            <li>Undo/redo changes made through the editor.</li>
+          </ul>
+          <h3>Still experimental / not yet supported</h3>
+          <p>Remote <code>player_*</code> selection, arbitrary chunk/subchunk editing, block entities/containers, actor editing, and complete table compaction. Unsupported table compression is skipped with a diagnostic instead of being overwritten.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="itemDialog">
+    <form method="dialog" onsubmit="return false">
+      <div class="dialog-head"><div><span class="eyebrow">ITEM STACK</span><h2 id="itemSlotLabel">Slot</h2></div><button id="itemCancel" class="iconbtn" aria-label="Close">×</button></div>
+      <label><span>Item identifier</span><input id="itemId" list="itemIds" autocomplete="off"></label>
+      <datalist id="itemIds"></datalist>
+      <div class="formgrid two"><label><span>Count</span><input id="itemCount" type="number" min="0" max="127"></label><label><span>Damage / data</span><input id="itemDamage" type="number"></label></div>
+      <details><summary>Raw item data</summary><pre id="itemRaw" class="codebox"></pre></details>
+      <div class="dialog-actions"><button id="deleteItem" class="danger" type="button">Delete item</button><span></span><button id="itemCancel2" class="ghost" type="button" onclick="document.getElementById('itemDialog').close()">Cancel</button><button id="itemSave" class="primary" type="button">Save item</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
