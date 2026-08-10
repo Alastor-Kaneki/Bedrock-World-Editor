@@ -1,135 +1,83 @@
-# Bedrock Web Editor v0.2.1-alpha
+# Bedrock Web Editor v0.3.1-alpha
 
 A zero-build, client-side Minecraft Bedrock world/inventory editor designed for GitHub Pages.
 
-## v0.2.1 workflow correction
+**Live site:** https://alastor-kaneki.github.io/Bedrock-World-Editor/
 
-The editor is a **whole-world editor**, but `level.dat` is the primary file. When a `.mcworld`, ZIP, or world folder is opened, the app now treats the workflow in this order:
+v0.3.1 fixes stale GitHub Pages/PWA caching and makes the v0.3 item/enchantment UI part of the normal page shell, while keeping compatibility with users who still have the older shell cached.
 
-1. Find and parse `level.dat` first.
-2. Open directly into the `level.dat` editor.
-3. Apply world-setting and NBT edits to that in-memory `level.dat`.
-4. Preserve every other file in the imported world.
-5. Consult `db/` only for data that is not actually stored in `level.dat` (for example modern `~local_player`).
-6. Rebuild the complete world with the edited `level.dat` as the primary changed file.
+## What it does
 
-Standalone `level.dat` import/export remains supported for diagnostics, but the intended normal workflow is a complete Bedrock world.
+- Opens complete `.mcworld` / ZIP world archives and Bedrock world folders.
+- Treats `level.dat` as the primary world file and preserves the rest of the world during export.
+- Parses and writes Bedrock's 8-byte `level.dat` header and little-endian NBT.
+- Edits world name, seed, game mode, difficulty, spawn, time, commands, Creative-loaded state, and detected gamerules.
+- Browses and edits the full `level.dat` NBT tree.
+- Detects embedded player records and can recover `~local_player` from supported LevelDB data.
+- Edits main inventory, armor, offhand, XP level, and health.
+- Browses the current Bedrock item listing from Microsoft's official Minecraft Creator reference.
+- Includes technical, hidden/normally-unobtainable, Education/chemistry, deprecated, and placeholder IDs exposed by the reference.
+- Resolves matching item/block sprites from Mojang's official `bedrock-samples` resource-pack metadata and raw assets.
+- Falls back to a built-in catalog and glyph preview when an official source/texture cannot be reached.
+- Adds/removes/updates item enchantments through Bedrock item NBT.
+- Shows normal enchantment maximums as hints while allowing signed `TAG_Short` levels from `-32768` through `32767` and custom numeric enchantment IDs.
+- Supports undo/redo.
+- Exports edited `level.dat` or a rebuilt `.mcworld`.
+- Works as a PWA on GitHub Pages.
 
-The experimental browser-side LevelDB bridge from v0.2 remains available as a **secondary layer**, not the center of the editor.
+## v0.3.1 cache/update fix
 
-## What works
+The previous service worker used a cache-first strategy for the entire app shell, which could make an already-opened or installed copy appear stuck on an older release. v0.3.1:
 
-- Open complete `.mcworld` and `.zip` world archives.
-- Open complete Bedrock world folders.
-- **Load `level.dat` first and use it as the primary editor/source.**
-- Preserve the remaining world files and re-export the complete world.
-- Open a standalone `level.dat` as a secondary diagnostic workflow.
-- Parse/rewrite Bedrock's 8-byte `level.dat` header and little-endian NBT.
-- All standard NBT tag types, including signed 64-bit `TAG_Long` through JavaScript `BigInt`.
-- Edit world name, seed, game mode, difficulty, spawn, world time, commands, Creative-loaded state, and detected gamerules.
-- Browse the complete `level.dat` NBT tree and edit scalar values.
-- Detect player compounds embedded in `level.dat`.
-- **Automatically recover and edit `~local_player` from LevelDB when its record is readable.**
-- Main inventory, armor, offhand, XP level, and health editing.
-- Clear the main inventory.
-- Load/export raw little-endian player NBT.
-- Bind a raw player NBT record to `~local_player` for the next world export.
-- Inspect database status, manifest path, DB files, table warnings, and pending player DB edits.
-- Undo/redo across `level.dat`, raw-player, and LevelDB-player edits.
-- Export modified `level.dat` or a rebuilt `.mcworld`.
-- Install as a PWA after GitHub Pages/HTTPS hosting.
+- bumps the cache namespace;
+- uses versioned `app.js` / CSS URLs;
+- forces service-worker update checks with `updateViaCache: "none"`;
+- uses network-first loading for HTML, JavaScript, CSS, and the manifest;
+- deletes previous Bedrock Web Editor caches on activation;
+- refreshes controlled windows after the new worker activates.
 
-## LevelDB engine coverage
+## LevelDB support
 
-`leveldb-adapter.js` is now a real engine rather than a placeholder. It implements:
+`leveldb-adapter.js` currently implements:
 
 - LevelDB physical WAL records (`FULL`, `FIRST`, `MIDDLE`, `LAST`)
 - 32 KiB WAL block fragmentation
 - CRC32C + LevelDB checksum masking
 - WriteBatch parsing/writing with 64-bit sequence numbers
-- `CURRENT` / `MANIFEST` VersionEdit parsing needed for live-file discovery
-- Exact user-key lookup in table index/data blocks
-- LevelDB internal-key sequence/type handling
-- uncompressed blocks
-- raw Snappy block decompression
-- best-effort compression-type-2 decompression through browser `DecompressionStream` (`zstd`, `deflate`, or raw DEFLATE where available)
-- safe new-log overlay export
+- `CURRENT` / `MANIFEST` parsing needed for live-file discovery
+- exact user-key lookup in supported table blocks
+- uncompressed blocks and raw Snappy decompression
+- best-effort compression-type-2 handling through browser decompression APIs
+- safe new-log overlay export for edited local-player data
 
-### Why an overlay instead of rewriting SST files?
+The DB layer is secondary to `level.dat`; original SST tables are left untouched by the experimental player overlay writer.
 
-Rebuilding Mojang/Bedrock table files in-browser is much riskier than appending a valid recovery log. LevelDB recovery scans eligible/newer log files and replays their WriteBatches before opening the database. v0.2 uses that mechanism and leaves the original sorted tables untouched.
+## Still experimental / incomplete
 
-## Still not complete
-
-This is **not yet a full Amulet/Universal Minecraft Tool-style world engine**. Remaining work includes:
-
-- enumerating/selecting remote `player_*` records
+- remote `player_*` selection
 - arbitrary LevelDB key browsing
-- chunk/subchunk decoding and block editing
+- chunk/subchunk block editing
 - block entities and chest/container inventories
 - actors/entities
-- maps/structures/POI data
+- maps/structures/POI editing
 - full SST creation/compaction
-- broader handling of Bedrock-specific historical compression variants
+- broader historical Bedrock compression variants
 
-If an SST block uses unsupported compression, the editor reports/skips it instead of overwriting it.
+Unsupported table compression is skipped with diagnostics rather than overwritten.
 
-## GitHub Pages deployment
+## GitHub Pages
 
-No build step is required.
-
-1. Create a GitHub repository.
-2. Copy this folder's contents to the repo root.
-3. Commit/push.
-4. Open **Settings → Pages**.
-5. Choose **Deploy from a branch**.
-6. Pick your default branch and `/ (root)`.
-
-All application URLs are relative, so both of these layouts work:
-
-- `https://USERNAME.github.io/`
-- `https://USERNAME.github.io/REPOSITORY/`
+This repository is intended to deploy directly from `main` at `/ (root)` with no build step.
 
 ## Local testing
 
-Use HTTP rather than double-clicking `index.html` if you want PWA/service-worker behavior:
-
 ```bash
 python -m http.server 8080
-```
-
-Then visit `http://localhost:8080/`.
-
-Optional binary self-test (Node.js):
-
-```bash
 node tests/selftest.mjs
 ```
 
-## Archive support
-
-`zip.js` provides built-in ZIP32 import/export. It uses browser Compression Streams for DEFLATE and has no CDN/runtime dependency. ZIP64 is intentionally rejected instead of being written incorrectly.
-
 ## Safety
 
-**Keep the original world.** LevelDB player writing is experimental. Test the exported copy in Minecraft before replacing anything important.
-
-## Project layout
-
-- `index.html` — responsive editor UI
-- `styles.css` — dark red/purple responsive styling
-- `app.js` — level.dat-first whole-world workflow, UI, secondary DB integration, export
-- `nbt.js` — Bedrock little-endian NBT parser/writer
-- `zip.js` — client-side ZIP reader/writer
-- `leveldb-adapter.js` — browser LevelDB WAL/table reader + recovery-log writer
-- `manifest.webmanifest` / `service-worker.js` — PWA support
-- `icon.svg` — app icon
-- `.nojekyll` — GitHub Pages/Jekyll bypass
-- `test-fixtures/` — synthetic parser/editor fixtures
-- `tests/selftest.mjs` — Node-based NBT/ZIP/LevelDB binary regression test
-
-## Format references
-
-Implementation decisions for LevelDB record/table/recovery behavior were checked against the current Mojang LevelDB source. Bedrock storage behavior was checked against Microsoft Minecraft Creator documentation.
+Keep an original copy of important worlds and test edited exports before replacing the original save.
 
 This is an unofficial Minecraft tool and is not affiliated with Mojang or Microsoft.

@@ -9,7 +9,7 @@
   <title>Bedrock Web Editor</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=0.3.1">
 </head>
 <body>
   <header class="topbar">
@@ -26,7 +26,7 @@
   <main>
     <section id="emptyState" class="hero">
       <div class="hero-copy">
-        <span class="eyebrow">v0.2.1 ALPHA • STATIC • GITHUB PAGES READY</span>
+        <span class="eyebrow">v0.3.1 ALPHA • STATIC • GITHUB PAGES READY</span>
         <h1>Edit Bedrock worlds <span>in your browser.</span></h1>
         <p>Open a whole <code>.mcworld</code>, ZIP, or Bedrock world folder. <code>level.dat</code> is loaded first and treated as the primary world file; <code>db/</code> is used only for data that lives outside it. Files stay on your device.</p>
       </div>
@@ -49,7 +49,7 @@
 
     <section id="editor" hidden>
       <div class="worldbar">
-        <div><span class="eyebrow">OPEN WORLD</span><h1 id="worldTitle">World</h1><p><span id="sourceName"></span> • <span id="sourceType"></span></p></div>
+        <div><span class="eyebrow">OPEN WORLD</span><h1 id="worldTitle">World</h1><p><span id="sourceName"></span> • <span id="sourceType"></span></div>
         <div class="worldmeta"><span><b id="headerVersion">—</b> header</span><span><b id="payloadSize">—</b> payload</span><span><b id="levelHeaderInfo">—</b></span></div>
       </div>
 
@@ -82,8 +82,8 @@
           <label><span>World name</span><input id="worldName" type="text"></label>
           <label><span>Seed</span><input id="seed" type="text" inputmode="numeric"></label>
           <label><span>Game mode</span><select id="gameMode"><option value="0">Survival</option><option value="1">Creative</option><option value="2">Adventure</option><option value="3">Spectator</option></select></label>
-          <label><span>Difficulty</span><select id="difficulty"><option value="0">Peaceful</option><option value="1">Easy</option><option value="2">Normal</option><option value="3">Hard</option></select></label>
-          <label><span>Spawn X</span><input id="spawnX" type="number"></label>
+          <label><span>Difficulty</span><select id="difficulty"><option value="0">Peaceful</option><option value="1">Easy</option><option value="2">Normal</option><option><option value="3">Hard</option></select></label>
+          <label><span>Spawn X<span><input id="spawnX" type="number"></label>
           <label><span>Spawn Y</span><input id="spawnY" type="number"></label>
           <label><span>Spawn Z</span><input id="spawnZ" type="number"></label>
           <label><span>World time</span><input id="worldTime" type="text" inputmode="numeric"></label>
@@ -110,23 +110,21 @@
             <button id="exportSelectedPlayer" class="ghost">Export player NBT</button>
             <button id="clearInventory" class="danger">Clear main inventory</button>
           </div>
-          <div class="inventory-layout">
-            <div><h3>Main inventory</h3><div id="inventoryGrid" class="invgrid"></div></div>
-            <aside><h3>Armor</h3><div id="armorGrid" class="specialgrid"></div><h3>Offhand</h3><div id="offhandGrid" class="specialgrid"></div></aside>
-          </div>
+          <h3>Main inventory</h3><div id="inventoryGrid" class="inventory-grid"></div>
+          <div class="special-grids"><div><h3>Armor</h3><div id="armorGrid" class="inventory-grid small"></div></div><div><h3>Offhand</h3><div id="offhandGrid" class="inventory-grid small"></div></div></div>
         </div>
-        <article class="card raw-card">
-          <div><h3>Raw player NBT</h3><p>For testing LevelDB player values separately, load a raw little-endian NBT record.</p></div>
-          <label class="ghost file-label">Load raw NBT<input id="rawPlayerInput" type="file" hidden></label>
+        <article class="card secondary-tool">
+          <div><h3>Rawplayer NBT</h3><p>Use this if you have extracted a single player record. It does not replace whole-world import.</p></div>
+          <label class="ghost file-label">Load player NBT<input id="playerNBTInput" type="file" hidden></label>
         </article>
-        <div id="rawPlayerPanel" class="card" hidden>
-          <div class="section-title compact"><div><h3 id="rawPlayerName"></h3></div><div class="inline-actions"><button id="bindRawPlayer" class="primary">Use as ~local_player</button><button id="exportRawPlayer" class="ghost">Export raw NBT</button></div></div>
+        <article id="rawPlayerPanel" class="card" hidden>
+          <div class="section-title"><div><h3>Loaded raw player record</h3><p id="rawPlayerName"></p></div><div class="inline-actions"><button id="bindLocalPlayer" class="ghost">Bind to ~local_player</button><button id="exportRawPlayer" class="ghost">Export raw NBT</button></div></div>
           <pre id="rawPlayerJson" class="codebox"></pre>
-        </div>
+        </article>
       </section>
 
       <section id="panel-nbt" class="panel">
-        <div class="section-title"><div><span class="eyebrow">ADVANCED</span><h2>NBT tree</h2><p>Click a scalar value to edit it.</p></div><input id="nbtSearch" class="search" placeholder="Search tags or values…"></div>
+        <div class="section-title"><div><span class="eyebrow">LEVEL.DAT NBT</span><h2>Raw tree browser</h2></div><input id="nbtSearch" class="search" placeholder="Filter tags ..."></div>
         <div id="nbtTree" class="nbt-tree"></div>
       </section>
 
@@ -145,15 +143,20 @@
 
       <section id="panel-about" class="panel">
         <div class="card prose">
-          <span class="eyebrow">BEDROCK WEB EDITOR • v0.2.1 ALPHA</span>
+          <span class="eyebrow">BEDROCK WEB EDITOR • v0.3.1 ALPHA</span>
           <h2>What this build actually supports</h2>
           <p>This is a static application: HTML, CSS and JavaScript only. It can be hosted from a normal GitHub Pages repository with no server, database, account system, or build step.</p>
+          <p><strong>Live site:</strong> <a href="https://alastor-kaneki.github.io/Bedrock-World-Editor/" target="_blank" rel="noopener">alastor-kaneki.github.io/Bedrock-World-Editor/</a></p>
+          <p class="muted"><strong>Build:</strong> v0.3.1-alpha • cache-migration release</p>
           <ul>
             <li>Open and re-export complete <code>.mcworld</code> / ZIP archives and Bedrock world folders.</li>
             <li>Treat <code>level.dat</code> as the primary file: load it first, edit it directly, preserve unknown tags, and write it back into the whole-world export.</li>
             <li>Parse and write Bedrock's 8-byte <code>level.dat</code> header and little-endian NBT.</li>
             <li>Edit common world settings while preserving unrecognized NBT tags.</li>
             <li>Edit inventory/armor/offhand from embedded NBT, raw NBT, or a recoverable LevelDB <code>~local_player</code> record.</li>
+            <li>Browse the current official Bedrock item listing, including technical, Education, deprecated, hidden, and normally unobtainable IDs.</li>
+            <li>Display matching vanilla item/block sprites directly from Mojang’s official <code>bedrock-samples</code> repository.</li>
+            <li>Add, remove, and edit enchantments, including arbitrary numeric enchantment IDs and out-of-range levels.</li>
             <li>Read standard LevelDB WAL records and exact keys from supported SST blocks.</li>
             <li>Export local-player edits as a new LevelDB recovery WAL overlay without rewriting existing SST tables.</li>
             <li>Undo/redo changes made through the editor.</li>
@@ -165,18 +168,57 @@
     </section>
   </main>
 
-  <dialog id="itemDialog">
+  <dialog id="itemDialog" class="wide-dialog">
     <form method="dialog" onsubmit="return false">
       <div class="dialog-head"><div><span class="eyebrow">ITEM STACK</span><h2 id="itemSlotLabel">Slot</h2></div><button id="itemCancel" class="iconbtn" aria-label="Close">×</button></div>
-      <label><span>Item identifier</span><input id="itemId" list="itemIds" autocomplete="off"></label>
+      <div id="itemPreview" class="item-preview"></div>
+      <div class="item-id-row">
+        <label><span>Item identifier</span><input id="itemId" list="itemIds" autocomplete="off" spellcheck="false"></label>
+        <button id="browseCatalog" class="ghost" type="button">Browse all items</button>
+      </div>
       <datalist id="itemIds"></datalist>
       <div class="formgrid two"><label><span>Count</span><input id="itemCount" type="number" min="0" max="127"></label><label><span>Damage / data</span><input id="itemDamage" type="number"></label></div>
+
+      <section class="enchant-editor">
+        <div class="subsection-head"><div><span class="eyebrow">ENCHANTMENTS</span><h3>Enchant stack</h3></div><button id="enchantClear" class="ghost smallbtn" type="button">Clear all</button></div>
+        <div id="enchantList" class="enchant-list"></div>
+        <div class="enchant-add">
+          <label><span>Enchantment</span><select id="enchantType"></select></label>
+          <label id="enchantCustomWrap" hidden><span>Numeric ID</span><input id="enchantCustomId" type="number" value="0" min="-32768" max="32767"></label>
+          <label><span>Level</span><input id="enchantLevel" type="number" value="1" step="1"></label>
+          <button id="enchantAdd" class="ghost" type="button">Add / update</button>
+        </div>
+        <p class="muted tiny">Normal maximum levels are shown as hints. The editor allows out-of-range levels and custom numeric IDs for experimental/illegal stacks.</p>
+      </section>
+
       <details><summary>Raw item data</summary><pre id="itemRaw" class="codebox"></pre></details>
       <div class="dialog-actions"><button id="deleteItem" class="danger" type="button">Delete item</button><span></span><button id="itemCancel2" class="ghost" type="button" onclick="document.getElementById('itemDialog').close()">Cancel</button><button id="itemSave" class="primary" type="button">Save item</button></div>
     </form>
   </dialog>
 
+  <dialog id="catalogDialog" class="catalog-dialog">
+    <form method="dialog" onsubmit="return false">
+      <div class="dialog-head"><div><span class="eyebrow">OFFICIAL BEDROCK CATALOG</span><h2>Items & hidden IDs</h2></div><button id="catalogClose" class="iconbtn" type="button" aria-label="Close">×</button></div>
+      <div class="catalog-source"><b id="catalogSourceStatus">Loading official catalog…</b><span id="catalogSourceDetails">Microsoft Learn + Mojang bedrock-samples</span></div>
+      <div class="catalog-toolbar">
+        <input id="catalogSearch" class="search" placeholder="Search item ID or runtime ID…" autocomplete="off">
+        <select id="catalogFilter">
+          <option value="all">All items</option>
+          <option value="special">Hidden / technical / education</option>
+          <option value="technical">Technical / normally unobtainable</option>
+          <option value="education">Education / chemistry</option>
+          <option value="deprecated">Deprecated / placeholder</option>
+          <option value="normal">Normal</option>
+        </select>
+        <span id="catalogCount" class="pill">0 results</span>
+      </div>
+      <p class="muted tiny catalog-note">Catalog IDs come from Microsoft’s Bedrock reference. Sprites are linked directly from Mojang’s official <code>bedrock-samples</code> resource pack when a matching vanilla texture exists. No Minecraft textures are copied into this repository.</p>
+      <div id="catalogGrid" class="catalog-grid"></div>
+      <button id="catalogLoadMore" class="ghost catalog-more" type="button">Show more</button>
+    </form>
+  </dialog>
+
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=0.3.1"></script>
 </body>
 </html>
