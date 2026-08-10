@@ -9,7 +9,7 @@
   <title>Bedrock Web Editor</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=0.3.1">
+  <link rel="stylesheet" href="./styles.css?v=0.3.2">
 </head>
 <body>
   <header class="topbar">
@@ -26,7 +26,7 @@
   <main>
     <section id="emptyState" class="hero">
       <div class="hero-copy">
-        <span class="eyebrow">v0.3.1 ALPHA • STATIC • GITHUB PAGES READY</span>
+        <span class="eyebrow">v0.3.2 ALPHA • STATIC • GITHUB PAGES READY</span>
         <h1>Edit Bedrock worlds <span>in your browser.</span></h1>
         <p>Open a whole <code>.mcworld</code>, ZIP, or Bedrock world folder. <code>level.dat</code> is loaded first and treated as the primary world file; <code>db/</code> is used only for data that lives outside it. Files stay on your device.</p>
       </div>
@@ -49,7 +49,7 @@
 
     <section id="editor" hidden>
       <div class="worldbar">
-        <div><span class="eyebrow">OPEN WORLD</span><h1 id="worldTitle">World</h1><p><span id="sourceName"></span> • <span id="sourceType"></span></div>
+        <div><span class="eyebrow">OPEN WORLD</span><h1 id="worldTitle">World</h1><p><span id="sourceName"></span> • <span id="sourceType"></span></p></div>
         <div class="worldmeta"><span><b id="headerVersion">—</b> header</span><span><b id="payloadSize">—</b> payload</span><span><b id="levelHeaderInfo">—</b></span></div>
       </div>
 
@@ -82,8 +82,8 @@
           <label><span>World name</span><input id="worldName" type="text"></label>
           <label><span>Seed</span><input id="seed" type="text" inputmode="numeric"></label>
           <label><span>Game mode</span><select id="gameMode"><option value="0">Survival</option><option value="1">Creative</option><option value="2">Adventure</option><option value="3">Spectator</option></select></label>
-          <label><span>Difficulty</span><select id="difficulty"><option value="0">Peaceful</option><option value="1">Easy</option><option value="2">Normal</option><option><option value="3">Hard</option></select></label>
-          <label><span>Spawn X<span><input id="spawnX" type="number"></label>
+          <label><span>Difficulty</span><select id="difficulty"><option value="0">Peaceful</option><option value="1">Easy</option><option value="2">Normal</option><option value="3">Hard</option></select></label>
+          <label><span>Spawn X</span><input id="spawnX" type="number"></label>
           <label><span>Spawn Y</span><input id="spawnY" type="number"></label>
           <label><span>Spawn Z</span><input id="spawnZ" type="number"></label>
           <label><span>World time</span><input id="worldTime" type="text" inputmode="numeric"></label>
@@ -110,21 +110,23 @@
             <button id="exportSelectedPlayer" class="ghost">Export player NBT</button>
             <button id="clearInventory" class="danger">Clear main inventory</button>
           </div>
-          <h3>Main inventory</h3><div id="inventoryGrid" class="inventory-grid"></div>
-          <div class="special-grids"><div><h3>Armor</h3><div id="armorGrid" class="inventory-grid small"></div></div><div><h3>Offhand</h3><div id="offhandGrid" class="inventory-grid small"></div></div></div>
+          <div class="inventory-layout">
+            <div><h3>Main inventory</h3><div id="inventoryGrid" class="invgrid"></div></div>
+            <aside><h3>Armor</h3><div id="armorGrid" class="specialgrid"></div><h3>Offhand</h3><div id="offhandGrid" class="specialgrid"></div></aside>
+          </div>
         </div>
-        <article class="card secondary-tool">
-          <div><h3>Rawplayer NBT</h3><p>Use this if you have extracted a single player record. It does not replace whole-world import.</p></div>
-          <label class="ghost file-label">Load player NBT<input id="playerNBTInput" type="file" hidden></label>
+        <article class="card raw-card">
+          <div><h3>Raw player NBT</h3><p>For testing LevelDB player values separately, load a raw little-endian NBT record.</p></div>
+          <label class="ghost file-label">Load raw NBT<input id="rawPlayerInput" type="file" hidden></label>
         </article>
-        <article id="rawPlayerPanel" class="card" hidden>
-          <div class="section-title"><div><h3>Loaded raw player record</h3><p id="rawPlayerName"></p></div><div class="inline-actions"><button id="bindLocalPlayer" class="ghost">Bind to ~local_player</button><button id="exportRawPlayer" class="ghost">Export raw NBT</button></div></div>
+        <div id="rawPlayerPanel" class="card" hidden>
+          <div class="section-title compact"><div><h3 id="rawPlayerName"></h3></div><div class="inline-actions"><button id="bindRawPlayer" class="primary">Use as ~local_player</button><button id="exportRawPlayer" class="ghost">Export raw NBT</button></div></div>
           <pre id="rawPlayerJson" class="codebox"></pre>
-        </article>
+        </div>
       </section>
 
       <section id="panel-nbt" class="panel">
-        <div class="section-title"><div><span class="eyebrow">LEVEL.DAT NBT</span><h2>Raw tree browser</h2></div><input id="nbtSearch" class="search" placeholder="Filter tags ..."></div>
+        <div class="section-title"><div><span class="eyebrow">ADVANCED</span><h2>NBT tree</h2><p>Click a scalar value to edit it.</p></div><input id="nbtSearch" class="search" placeholder="Search tags or values…"></div>
         <div id="nbtTree" class="nbt-tree"></div>
       </section>
 
@@ -143,11 +145,11 @@
 
       <section id="panel-about" class="panel">
         <div class="card prose">
-          <span class="eyebrow">BEDROCK WEB EDITOR • v0.3.1 ALPHA</span>
+          <span class="eyebrow">BEDROCK WEB EDITOR • v0.3.2 ALPHA</span>
           <h2>What this build actually supports</h2>
           <p>This is a static application: HTML, CSS and JavaScript only. It can be hosted from a normal GitHub Pages repository with no server, database, account system, or build step.</p>
           <p><strong>Live site:</strong> <a href="https://alastor-kaneki.github.io/Bedrock-World-Editor/" target="_blank" rel="noopener">alastor-kaneki.github.io/Bedrock-World-Editor/</a></p>
-          <p class="muted"><strong>Build:</strong> v0.3.1-alpha • cache-migration release</p>
+          <p class="muted"><strong>Build:</strong> v0.3.2-alpha • Firefox/cache recovery release</p>
           <ul>
             <li>Open and re-export complete <code>.mcworld</code> / ZIP archives and Bedrock world folders.</li>
             <li>Treat <code>level.dat</code> as the primary file: load it first, edit it directly, preserve unknown tags, and write it back into the whole-world export.</li>
@@ -219,6 +221,6 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=0.3.1"></script>
+  <script type="module" src="./boot-0.3.2.js"></script>
 </body>
 </html>
