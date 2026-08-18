@@ -1,10 +1,16 @@
-# Bedrock Web Editor v0.6.0-alpha
+# Bedrock Workshop v0.6.1-alpha
 
-A zero-build, client-side Minecraft Bedrock world / inventory / container editor designed for GitHub Pages.
+A zero-build, local-first Minecraft Bedrock world, inventory, and container editor designed for GitHub Pages.
 
 **Live site:** `https://alastor-kaneki.github.io/Bedrock-World-Editor/`
 
-## v0.6.0 — verified LevelDB writeback
+## v0.6.1 - workshop refresh and tile helper recovery
+
+v0.6.1 restores the missing Bedrock DB-key, concatenated tile-NBT, tile metadata, and container-size helpers used by the v0.6 controller. It also adds a focused Bedrock Workshop interface, parallel startup loading, keyboard-accessible controls and tabs, clearer local-processing guidance, responsive mobile actions, and a safer PWA cache strategy.
+
+Unsaved command/sign/spawner/flower-pot card drafts now survive UI rerenders and block Save All or export until every highlighted card is explicitly saved, preventing the current controller from silently discarding those fields.
+
+## v0.6.0 - verified LevelDB writeback
 
 v0.6 replaces the unsafe orphan-WAL experiment that could produce a world which imported but failed when Minecraft tried to load it.
 
@@ -82,7 +88,7 @@ This is substantially safer than the old method of dropping a hand-made WAL into
 - Bedrock x/z/dimension/type DB-key decoding
 - packed LevelDB internal-key sequence/type tags
 
-When the WASM helper loads successfully, the LevelDB reader/writer routes CRC32C mask/unmask work through it and the tile-key scanner uses its key decoder. The LevelDB table/MANIFEST implementation itself is still JavaScript; this repository does **not** claim to contain a complete port of Mojang's native LevelDB implementation to WebAssembly yet.
+When the WASM helper loads successfully, the LevelDB reader/writer routes CRC32C mask/unmask work through it. Its key decoder is also self-tested alongside the scanner's equivalent JavaScript decoder. The LevelDB table/MANIFEST implementation itself is still JavaScript; this repository does **not** claim to contain a complete port of Mojang's native LevelDB implementation to WebAssembly yet.
 
 ## DB key support used by the container scanner
 
@@ -102,7 +108,7 @@ Unknown DB keys remain untouched.
 - The generated `.mcworld` is parsed again before download.
 - `level.dat` must round-trip exactly.
 - Every staged DB value must be visible from the exported DB and match exactly.
-- Unsupported DB formats fail the export instead of silently claiming success.
+- The generated archive is checked with an internal reopen/readback pass. This is not a substitute for retaining the original and testing the edited copy in Minecraft.
 
 ## Still experimental / not yet supported
 
@@ -116,21 +122,28 @@ Unknown DB keys remain untouched.
 
 ## Local tests
 
+Serve the repository and open `tests/browser-smoke.html` in a current Chromium- or Firefox-based browser:
+
 ```bash
-node tests/selftest.mjs
+python3 -m http.server 8000
 ```
 
-The v0.6 test suite covers:
+The v0.6.1 browser smoke test covers:
 
 - NBT round-trip
 - CRC32C known vector
 - `~local_player` sequence supersession through a generated L0 table
 - MANIFEST-history-preserving/CURRENT rollover
+- Bedrock dimension/tile DB-key decoding
+- concatenated named and unnamed tile-entity NBT
+- container slot sizing
+- player and tile-entity writeback through a generated L0 table
+- complete MANIFEST-history preservation and `CURRENT` rollover
 - a 100,000-byte LevelDB value
-- tile-entity key/value writeback
-- full LevelDB entry iteration
 - the real WebAssembly CRC/key helper
-- complete `.mcworld` ZIP repacking
+- byte-for-byte complete `.mcworld` ZIP repacking
+- full UI world loading, tile scanning, and multi-card draft retention
+- required offline asset coverage and app-shell cache isolation
 
 ## GitHub Pages
 
@@ -138,9 +151,11 @@ Publish `main` from `/ (root)` under **Settings → Pages**. There is no build s
 
 ## Project layout
 
-- `index.html` — responsive editor UI
-- `styles.css` — site styling
-- `app-0.6.0.js` — current controller
+- `index.html` - metadata and resilient loading shell
+- `ui-0.6.1.js` - responsive UI bootstrap
+- `enhancements.css` / `enhancements.js` - workshop design and accessibility layer
+- `app-0.6.1.js` - current controller bootstrap
+- `bedrock-helpers-0.6.1.js` - tile-key, NBT-sequence, and container helpers
 - `item-data-0.4.0.js` — item/enchantment/catalog data layer
 - `nbt.js` — little-endian Bedrock NBT
 - `zip.js` — client-side ZIP reader/writer
@@ -148,7 +163,7 @@ Publish `main` from `/ (root)` under **Settings → Pages**. There is no build s
 - `db-wasm.js` — WebAssembly bridge
 - `bedrock-db-core.wasm` — compiled integrity/key helper
 - `wasm/bedrock_db_core.c` — WASM source
-- `service-worker-0.6.0.js` — current PWA worker
-- `tests/selftest.mjs` — regression suite
+- `service-worker-0.6.1.js` - current PWA worker
+- `tests/browser-smoke.html` - browser regression suite
 
 This is an unofficial Minecraft tool and is not affiliated with Mojang or Microsoft.

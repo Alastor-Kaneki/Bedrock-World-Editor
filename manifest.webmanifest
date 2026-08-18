@@ -1,12 +1,13 @@
 {
-  "name": "Bedrock Web Editor",
-  "short_name": "Bedrock Editor",
-  "description": "Client-side Minecraft Bedrock world, inventory, item, hidden-ID, and enchantment editor.",
-  "start_url": "./?pwa=0.6.0",
+  "name": "Bedrock Workshop",
+  "short_name": "Bedrock",
+  "description": "Private, client-side Minecraft Bedrock world, inventory, container, and NBT editor.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#070a08",
+  "theme_color": "#070a08",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "./icon.svg",
