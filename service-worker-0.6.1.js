@@ -1,9 +1,10 @@
-// UI refresh marker: 2026-08-19
-const CACHE='bedrock-workshop-v0.6.1';
+// Feature pack marker: 2026-08-19
+const CACHE='bedrock-workshop-v0.6.1-features-1';
 const CORE=[
   './','./index.html','./ui-0.6.1.js?v=0.6.1','./app-0.6.1.js?v=0.6.1',
   './chunk-loader.js?v=0.6.1','./bedrock-helpers-0.6.1.js?v=0.6.1',
   './enhancements.css?v=0.6.1','./enhancements.js?v=0.6.1',
+  './workshop-features.css?v=0.6.1-feature-pack-1','./workshop-features.js?v=0.6.1-feature-pack-1',
   './item-data-0.4.0.js?v=0.6.1','./leveldb-adapter.js?v=0.6.1',
   './db-wasm.js?v=0.6.1','./bedrock-db-core.wasm','./nbt.js?v=0.6.1',
   './zip.js?v=0.6.1','./manifest.webmanifest','./icon.svg',
