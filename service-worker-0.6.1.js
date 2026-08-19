@@ -1,3 +1,4 @@
+// UI refresh marker: 2026-08-19
 const CACHE='bedrock-workshop-v0.6.1';
 const CORE=[
   './','./index.html','./ui-0.6.1.js?v=0.6.1','./app-0.6.1.js?v=0.6.1',
